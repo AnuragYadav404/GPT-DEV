@@ -86,7 +86,7 @@ val_data = data[n:]
 
 # let's define block_size
 # here the block size refers to the max size of context we are processing
-block_size = 8
+block_size = 32
 # block_size -> input, +1 -> becomes the output
 # print(train_data[:block_size+1]) # example sequence
 
@@ -149,7 +149,7 @@ optimizer = torch.optim.AdamW(m.parameters(), lr=1e-3)
 
 
 batch_size = 32
-for steps in range(10000): # increase number of steps for good results...
+for steps in range(1000): # increase number of steps for good results...
 
     # sample a batch of data
     xb, yb = get_batch('train')
@@ -162,4 +162,4 @@ for steps in range(10000): # increase number of steps for good results...
 
 print(loss.item())
 
-print(decode(m.generate(max_new_tokens=100, xb=context)[0].tolist()))
+print(decode(m.generate(max_new_tokens=300, xb=context)[0].tolist()))
