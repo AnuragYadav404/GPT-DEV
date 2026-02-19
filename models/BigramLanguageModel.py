@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-n_embd = 256
-block_size = 32 # this represents the sequence length of tokens under processing
+n_embd = 128
+block_size = 24 # this represents the sequence length of tokens under processing
 device= "mps" if torch.backends.mps.is_available() else "cpu"
 
 # lets implement something like a head for the language model

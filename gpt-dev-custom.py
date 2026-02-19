@@ -20,6 +20,7 @@ if torch.backends.mps.is_built():
 else:
     print("MPS is not built")
 
+block_size = 24
 
 # read the input file
 with open('./dataset/input.txt', 'r', encoding='utf-8') as f:
@@ -33,8 +34,8 @@ with open('./dataset/input.txt', 'r', encoding='utf-8') as f:
 # lets go ahead with character level vocab for now
 
 # here are all the unique characters that occur in this text
-chars = sorted(list(set(text)))
-vocab_size = len(chars)
+# chars = sorted(list(set(text)))
+# vocab_size = len(chars)
 """
 print(''.join(chars))
 print(chars)
@@ -48,17 +49,29 @@ print(vocab_size) # outputs 65
 # what does encode do?
 # it takes a character and outputs a number
 # lets create a dict that maps characters to their index and vice versa
-stoi = { ch:i for i,ch in enumerate(chars) }
-# print(stoi)
-itos = { i:ch for i,ch in enumerate(chars) }
-# print(itos)
-# what does decoder do?
-# takes a number, outputs a character
-def encode(s):
-    return [stoi[c] for c in s]
+# stoi = { ch:i for i,ch in enumerate(chars) }
+# # print(stoi)
+# itos = { i:ch for i,ch in enumerate(chars) }
+# # print(itos)
+# # what does decoder do?
+# # takes a number, outputs a character
+# def encode(s):
+#     return [stoi[c] for c in s]
 
-def decode(l):
-    return ''.join([itos[i] for i in l])
+# def decode(l):
+#     return ''.join([itos[i] for i in l])
+
+
+
+
+
+
+# assert enc.decode(enc.encode("hello world")) == "hello world"
+
+# # To get the tokeniser corresponding to a specific model in the OpenAI API:
+# enc = tiktoken.encoding_for_model("gpt-4o")
+
+"""------------------ tiktoken -------------------"""
 
 # create a mapping from characters to integers
 
@@ -74,8 +87,21 @@ def decode(l):
 # where each token is a number or index
 
 # let's now encode the entire text dataset and store it into a torch.Tensor
-import torch # we use PyTorch: https://pytorch.org
-data = torch.tensor(encode(text), dtype=torch.long)
+
+
+# import torch # we use PyTorch: https://pytorch.org
+# data = torch.tensor(encode(text), dtype=torch.long)
+
+
+# using tiktoken
+"""------------------ tiktoken -------------------"""
+import tiktoken
+enc = tiktoken.get_encoding("r50k_base")
+vocab_size = enc.n_vocab
+
+
+data = torch.tensor(enc.encode(text), dtype=torch.long)
+
 # print(data.shape, data.dtype)
 # print(data[:1000]) # the 1000 characters we looked at earier will to the GPT look like this
 
@@ -86,7 +112,7 @@ val_data = data[n:]
 
 # let's define block_size
 # here the block size refers to the max size of context we are processing
-block_size = 32
+# block_size = 32
 # block_size -> input, +1 -> becomes the output
 # print(train_data[:block_size+1]) # example sequence
 
@@ -125,6 +151,14 @@ print(yb.shape)
 
 from models import BigramLanguageModel
 # print(torch.__file__)
+
+
+
+# encoded input data
+
+
+
+
 m = BigramLanguageModel(vocab_size).to(device) # this feeds to the model initialization 
 logits, loss = m(xb, yb) # this feeds to the forward function
 print('logits shape: ', logits.shape)
@@ -139,7 +173,7 @@ for name, param in m.named_parameters():
         print(f"  {name}: shape={param.shape}")
 
 
-print(decode(m.generate(max_new_tokens=20, xb=context)[0].tolist()))
+print(enc.decode(m.generate(max_new_tokens=20, xb=context)[0].tolist()))
 # print(decode(m.generate(idx = torch.zeros((1, 1), dtype=torch.long), max_new_tokens=20)[0].tolist()))
 
 
@@ -148,7 +182,8 @@ print(decode(m.generate(max_new_tokens=20, xb=context)[0].tolist()))
 optimizer = torch.optim.AdamW(m.parameters(), lr=1e-3)
 
 
-batch_size = 32
+batch_size = 16
+
 for steps in range(1000): # increase number of steps for good results...
 
     # sample a batch of data
@@ -162,4 +197,4 @@ for steps in range(1000): # increase number of steps for good results...
 
 print(loss.item())
 
-print(decode(m.generate(max_new_tokens=300, xb=context)[0].tolist()))
+print(enc.decode(m.generate(max_new_tokens=300, xb=context)[0].tolist()))
