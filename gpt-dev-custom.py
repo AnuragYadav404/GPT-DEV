@@ -167,10 +167,10 @@ print('Loss: ', loss)
 # generate from the model
 context = torch.zeros((1, 1), dtype=torch.long, device=device)
 
-print("Model parameters:")
-for name, param in m.named_parameters():
-    if param.requires_grad:
-        print(f"  {name}: shape={param.shape}")
+# print("Model parameters:")
+# for name, param in m.named_parameters():
+#     if param.requires_grad:
+#         print(f"  {name}: shape={param.shape}")
 
 
 print(enc.decode(m.generate(max_new_tokens=20, xb=context)[0].tolist()))
@@ -184,17 +184,19 @@ optimizer = torch.optim.AdamW(m.parameters(), lr=1e-3)
 
 batch_size = 16
 
-for steps in range(1000): # increase number of steps for good results...
+for steps in range(100): # increase number of steps for good results...
 
     # sample a batch of data
     xb, yb = get_batch('train')
 
     # evaluate the loss
     logits, loss = m(xb, yb)
+    if(steps % 10 == 0):
+        print(f"step {steps}: loss {loss.item()}")
     optimizer.zero_grad(set_to_none=True)
     loss.backward()
     optimizer.step()
 
 print(loss.item())
 
-print(enc.decode(m.generate(max_new_tokens=300, xb=context)[0].tolist()))
+print(enc.decode(m.generate(max_new_tokens=40, xb=context)[0].tolist()))

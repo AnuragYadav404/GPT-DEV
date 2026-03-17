@@ -79,16 +79,20 @@ class MultiAttentionHead(nn.Module):
         return out
         # lets also add a linear hear
 
-class FeedForward(nn.Module):
+class FeedForward(nn.Module): # this is the MLP block, i guess
     def __init__(self, n_embd):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(n_embd, 4*n_embd),
+            # here the input (B,T,n_embd) is being mapped to (B,T,4*n_embd)
+            # how does this happen?
+            # n_embd neurons representing a token's embedding, those embedding are then scaled out 
+            nn.Linear(n_embd, 4*n_embd), 
             nn.ReLU(),
             nn.Linear(4*n_embd, n_embd)
         )
 
     def forward(self, x):
+        # input size is, (B,T,C)
         return self.net(x)
 
 
@@ -100,11 +104,15 @@ class Block(nn.Module):
         self.multi_head_attention1 = MultiAttentionHead(n_heads,self.head_size, n_embd)
         self.multi_head_attention2 = MultiAttentionHead(n_heads,self.head_size, n_embd)
         self.ffwd = FeedForward(n_embd)
+        self.ln1 = nn.LayerNorm(n_embd)
+        self.ln2 = nn.LayerNorm(n_embd)
 
     def forward(self, x):
         # here x must have n_embd as the last dimension or else it fails
-        x = x + self.multi_head_attention1(x)
-        x = x + self.multi_head_attention2(x)
+        x = x + self.multi_head_attention1(self.ln1(x))
+        x = x + self.multi_head_attention2(self.ln2(x))
+
+        # what is the shape of x? -> (B, T, C)
         x = x + self.ffwd(x)
         return x
 
@@ -157,6 +165,10 @@ class BigramLanguageModel(nn.Module):
         x = self.attention_block3(x)
 
         # after the attention block, i want it to be of size B,T,n_embd
+        # what does lm_head do?
+        # i have x of shape: (B,T,n_embd), it transforms it to (B,T,vocab_size)
+        # so it is a linear layer of n_embd x vocab_size
+
         logits = self.lm_head(x)
         # this will output logits as: B,T,vocab_size
         
